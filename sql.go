@@ -28,6 +28,17 @@ func (this *_sql) Tx(ctx context.Context) (Tx, error) {
 	}, nil
 }
 
+func (this *_sql) SelectOne(ctx context.Context, table string, keys ...interface{}) (interface{}, error) {
+	r, e := this.Select(ctx, table, keys...)
+	if e != nil {
+		return nil, e
+	}
+	if len(r) == 0 {
+		return nil, nil
+	}
+	return r[0], nil
+}
+
 func (this *_sql) Execute(ctx context.Context, sqlstr string, results []interface{}, paras ...interface{}) error {
 	return this._Execute(ctx, nil, this.db, sqlstr, results, paras...)
 }

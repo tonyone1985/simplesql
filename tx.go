@@ -40,6 +40,17 @@ func (this *_tx) DeleteAll(tableName string) error {
 	this.e = this.sql._DeleteAll(this.ctx, this.dbtx, nil, tableName)
 	return this.e
 }
+
+func (this *_tx) SelectOne(table string, keys ...interface{}) (interface{}, error) {
+	r, e := this.Select(table, keys...)
+	if e != nil {
+		return nil, e
+	}
+	if len(r) == 0 {
+		return nil, nil
+	}
+	return r[0], nil
+}
 func (this *_tx) Select(table string, keys ...interface{}) ([]interface{}, error) {
 	r, e := this.sql._Select(this.ctx, this.dbtx, nil, table, keys...)
 	this.e = e

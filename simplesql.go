@@ -20,6 +20,7 @@ type Sql interface {
 	Update(ctx context.Context, items ...interface{}) error
 	DeleteAll(ctx context.Context, tableName string) error
 	Select(ctx context.Context, table string, keys ...interface{}) ([]interface{}, error)
+	SelectOne(ctx context.Context, table string, keys ...interface{}) (interface{}, error)
 	SelectSingleInt(ctx context.Context, sqlstr string, paras ...interface{}) (int, error)
 	SelectSingleFloat(ctx context.Context, sqlstr string, paras ...interface{}) (float32, error)
 	SelectSingleString(ctx context.Context, sqlstr string, paras ...interface{}) (string, error)
@@ -36,6 +37,7 @@ type Tx interface {
 	Update(items ...interface{}) error
 	DeleteAll(tableName string) error
 	Select(table string, keys ...interface{}) ([]interface{}, error)
+	SelectOne(table string, keys ...interface{}) (interface{}, error)
 	SelectSingleInt(sqlstr string, paras ...interface{}) (int, error)
 	SelectSingleFloat(sqlstr string, paras ...interface{}) (float32, error)
 	SelectSingleString(sqlstr string, paras ...interface{}) (string, error)
