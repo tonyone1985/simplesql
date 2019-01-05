@@ -1,117 +1,106 @@
-package simplesql
+package main
 
 import (
 	"context"
-	//	"database/sql"
-
-	//"fmt"
 	"log"
-	//"strconv"
-	"testing"
+	"simplesql"
 
 	_ "github.com/lib/pq"
 )
 
+var ssql simplesql.Sql
+
+//simple struct
 type UserBean struct {
-	Username  string `skey:"1"`
-	Pwd       string
+	Username  string //first field of the simple struct will be default key if  has no skey field
+	Pwd       string //field name will be the column name if there is no scol tag
 	Nick_name string
 	Real_name string
 	Role_id   int
 }
+
+type UserBean2 struct {
+	Username  string `skey:"auto" scol:"username"` //all skey field will not be update when execute update;
+	Pwd       string `scol:"pwd"`
+	Nick_name string `skey:"def" scol:"nick_name"` //the skey fields will be used by where  when execute update;
+	Real_name string `scol:"real_name"`
+	Role_id   int    `scol:"role_id"`
+}
+
 type RoleBean struct {
-	Role_id   int `skey:"auto"`
+	Role_id   int `skey:"auto" scol:"role_id"` //auto skey will not be used when execute insert ; tag scol will be the column name
 	Role_Name string
 	Auths     string
 	Remark    string
 }
 
-func Test_testf(t *testing.T) {
-	main(t)
+func tinit() {
+	//simplesql.New("postgresql", "postgres://cxx:123456@localhost/testdb?sslmode=disable")
 
-}
-
-func main(t *testing.T) {
-	ctx := context.Background()
-	ssql, err := New("postgres", "postgres://cxx:123456@localhost/testdb?sslmode=disable")
+	var err error
+	ssql, err = simplesql.New("postgres", "postgres://postgres:postgres@localhost/dbtest?sslmode=disable")
 	if err != nil {
-		t.Error(err)
+		log.Println(err)
 		return
 	}
 
 	ssql.RegistTable(&UserBean{}, "wuser")
 	ssql.RegistTable(&RoleBean{}, "wrole")
-
-	r, err := ssql.Select(ctx, "wuser", "cxx")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	var usr *UserBean = nil
-	if len(r) > 0 {
-		usr = r[0].(*UserBean)
-		log.Println(usr.Pwd)
-	}
-
-	res, err := ssql.SelectSingleInt(ctx, "select count(0) from wuser")
-	if err != nil {
-		log.Println(err)
-		return
-	}
-	log.Println(res)
-
-	resf, err := ssql.SelectSingleFloat(context.Background(), "select count(0) from wuser")
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println(resf)
-
-	ress, err := ssql.SelectSingleString(context.Background(), "select count(0) from \"wuser\"")
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println(ress)
-
-	rest, err := ssql.SelectSingleTime(context.Background(), "select min(pid) from wauth")
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println(rest)
-
-	results := make([]interface{}, 2)
-	results[0] = new(int)
-	results[1] = new(int)
-	err = ssql.Execute(context.Background(), "select * from  P_112(2);", results)
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println(*results[1].(*int))
-
-	rss12, err := ssql.Execute2Table(context.Background(), "select * from P_111($1);", "\"User\"", 2)
-	if err != nil {
-		log.Println(err)
-	}
-	log.Println(len(rss12))
 }
 
-func testftx() {
-	sqlh, err := New("postgres", "postgres://cxx:123456@localhost/testdb?sslmode=disable")
-	if err != nil {
-		log.Println(err)
-		return
+func testinsert() {
+	tinit()
+	ctx := context.Background()
+	r1 := &RoleBean{
+		Role_Name: "rn",
+		Auths:     "1,2,3,4,5",
+		Remark:    "rremark",
 	}
+	r2 := &RoleBean{
+		Role_Name: "rn",
+		Auths:     "1,2,3,4,5",
+		Remark:    "rremark",
+	}
+	u := &UserBean{
+		Username:  "tony",
+		Pwd:       "123",
+		Nick_name: "nickname",
+		Real_name: "realname",
+		Role_id:   1,
+	}
+	er := ssql.Insert(ctx, r1, r2, u)
+	if er != nil {
+		log.Println(er)
+	}
+}
+func testupdate() {
+	tinit()
+	ctx := context.Background()
+	u := &UserBean{
+		Username:  "tony",
+		Pwd:       "1333",
+		Nick_name: "nick1name",
+		Real_name: "real2name",
+		Role_id:   3,
+	}
+	er := ssql.Update(ctx, u)
+	if er != nil {
+		log.Println(er)
+	}
+}
 
-	sqlh.RegistTable(&UserBean{}, "wuser")
-	tx, err := sqlh.Tx(context.Background())
-	if err != nil {
-		log.Println(err)
+func testselect() {
+	tinit()
+	ctx := context.Background()
+
+	r, er := ssql.SelectOne(ctx, "wuser", "tony")
+	if er != nil {
+		log.Println(er)
 		return
 	}
-	ub1 := &UserBean{}
-	ub1.Username = "yj3"
-	ub1.Real_name = "yyyy"
-	tx.Insert(ub1)
-	//tx.Insert(&User{})
-	defer tx.End()
-	tx.CommitForceLater()
+	if r == nil {
+		log.Println("no result")
+		return
+	}
+	log.Println(r.(*UserBean).Real_name)
 }

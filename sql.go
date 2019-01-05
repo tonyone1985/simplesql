@@ -149,14 +149,27 @@ func (this *_sql) RegistTable(eg interface{}, tableName string) error {
 	vtype := ptype.Elem()
 	keyfields := make([]*fieldItem, 0)
 	normalfields := make([]*fieldItem, 0)
+
 	for i, fl := 0, vtype.NumField(); i < fl; i++ {
-		if vtype.Field(i).Tag.Get(STRUCTTAG) == "" {
-			normalfields = append(normalfields, &fieldItem{FIELD_TYPE_NORMAL, i, vtype.Field(i).Name})
-		} else if vtype.Field(i).Tag.Get(STRUCTTAG) == AUTOKEYVAL {
-			keyfields = append(keyfields, &fieldItem{FIELD_TYPE_AUTOKEY, i, vtype.Field(i).Name})
-		} else {
-			keyfields = append(keyfields, &fieldItem{FIELD_TYPE_DEFKEY, i, vtype.Field(i).Name})
+		coltag := vtype.Field(i).Tag.Get(FIELDTAG)
+
+		if coltag == "" {
+			coltag = vtype.Field(i).Name
 		}
+
+		if vtype.Field(i).Tag.Get(KEYTAG) == "" {
+			normalfields = append(normalfields, &fieldItem{FIELD_TYPE_NORMAL, i, coltag})
+		} else if vtype.Field(i).Tag.Get(KEYTAG) == AUTOKEYVAL {
+			keyfields = append(keyfields, &fieldItem{FIELD_TYPE_AUTOKEY, i, coltag})
+		} else {
+			keyfields = append(keyfields, &fieldItem{FIELD_TYPE_DEFKEY, i, coltag})
+		}
+
+	}
+	if len(keyfields) == 0 {
+		keyfields = normalfields[0:1]
+		keyfields[0].ftp = FIELD_TYPE_DEFKEY
+		normalfields = normalfields[1:]
 	}
 
 	te := &itemControl{vtype, ptype, tableName, vtype.NumField(), this, keyfields, normalfields,
