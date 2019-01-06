@@ -20,15 +20,15 @@ type UserBean struct {
 }
 
 type UserBean2 struct {
-	Username  string `skey:"auto" scol:"username"` //all skey field will not be update when execute update;
-	Pwd       string `scol:"pwd"`
-	Nick_name string `skey:"def" scol:"nick_name"` //the skey fields will be used by where  when execute update;
-	Real_name string `scol:"real_name"`
-	Role_id   int    `scol:"role_id"`
+	Username  string `key:"auto" col:"username"` //all skey field will not be update when execute update;
+	Pwd       string `col:"pwd"`
+	Nick_name string `key:"def" col:"nick_name"` //the skey fields will be used by where  when execute update;
+	Real_name string `col:"real_name"`
+	Role_id   int    `col:"role_id"`
 }
 
 type RoleBean struct {
-	Role_id   int `skey:"auto" scol:"role_id"` //auto skey will not be used when execute insert ; tag scol will be the column name
+	Role_id   int `key:"auto" col:"role_id"` //auto skey will not be used when execute insert ; tag scol will be the column name
 	Role_Name string
 	Auths     string
 	Remark    string

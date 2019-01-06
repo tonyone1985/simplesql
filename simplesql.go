@@ -6,10 +6,10 @@ import (
 	"time"
 )
 
-const KEYTAG = "skey"
+const KEYTAG = "key"
 const AUTOKEYVAL = "auto"
 const DEFKEYVAL = "def"
-const FIELDTAG = "scol"
+const FIELDTAG = "col"
 
 type Sql interface {
 	//for regist a datatable to relate a go struct
