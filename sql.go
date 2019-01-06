@@ -263,15 +263,19 @@ func (this *_sql) _Insert(ctx context.Context, tx *sql.Tx, db *sql.DB, items ...
 	return nil
 }
 func (this *_sql) Select(ctx context.Context, table string, keys ...interface{}) ([]interface{}, error) {
-	return this._Select(ctx, nil, this.db, table, keys...)
+	return this._Select(ctx, nil, this.db, table, "", keys...)
 }
-func (this *_sql) _Select(ctx context.Context, tx *sql.Tx, db *sql.DB, table string, keys ...interface{}) ([]interface{}, error) {
+
+func (this *_sql) SelectWhere(ctx context.Context, table string, wherestr string, keys ...interface{}) ([]interface{}, error) {
+	return this._Select(ctx, nil, this.db, table, wherestr, keys...)
+}
+func (this *_sql) _Select(ctx context.Context, tx *sql.Tx, db *sql.DB, table string, wherestr string, keys ...interface{}) ([]interface{}, error) {
 	ctl, err := this.getCtlByTableName(table)
 	if err != nil {
 		return nil, err
 	}
 
-	stmt, paras, err := ctl.SqlSelectStmt(ctx, tx, db, keys...)
+	stmt, paras, err := ctl.SqlSelectStmt(ctx, tx, db, wherestr, keys...)
 	defer stmt.Close()
 	if err != nil {
 		return nil, err
@@ -425,9 +429,15 @@ func (this *itemControl) scan(row *sql.Rows) ([]interface{}, error) {
 	}
 	return objs, nil
 }
-func (this *itemControl) SqlSelectStmt(ctx context.Context, tx *sql.Tx, db *sql.DB, paras ...interface{}) (*sql.Stmt, []interface{}, error) {
-
-	wheresql, paras := this.whereSelect(paras...)
+func (this *itemControl) SqlSelectStmt(ctx context.Context, tx *sql.Tx, db *sql.DB, wheresqlp string, paras ...interface{}) (*sql.Stmt, []interface{}, error) {
+	var wheresql string
+	var rparas []interface{}
+	if wheresqlp == "" {
+		wheresql, rparas = this.whereSelect(paras...)
+	} else {
+		wheresql = " where " + wheresqlp
+		rparas = make([]interface{}, 0)
+	}
 
 	sqlstr := "SELECT " + this.Allfields() +
 		" FROM " + this.tableName + " " + wheresql
@@ -435,7 +445,7 @@ func (this *itemControl) SqlSelectStmt(ctx context.Context, tx *sql.Tx, db *sql.
 	if err != nil {
 		return nil, nil, err
 	}
-	return stmt, paras, nil
+	return stmt, rparas, nil
 
 }
 

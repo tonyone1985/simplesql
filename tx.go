@@ -52,10 +52,15 @@ func (this *_tx) SelectOne(table string, keys ...interface{}) (interface{}, erro
 	return r[0], nil
 }
 func (this *_tx) Select(table string, keys ...interface{}) ([]interface{}, error) {
-	r, e := this.sql._Select(this.ctx, this.dbtx, nil, table, keys...)
+	r, e := this.sql._Select(this.ctx, this.dbtx, nil, table, "", keys...)
 	this.e = e
 	return r, e
 }
+
+func (this *_tx) SelectWhere(table string, wherestr string, keys ...interface{}) ([]interface{}, error) {
+	return this.sql._Select(this.ctx, this.dbtx, nil, table, wherestr, keys...)
+}
+
 func (this *_tx) SelectSingleInt(sqlstr string, paras ...interface{}) (int, error) {
 	var r int
 	this.e = this.sql.selectSingle(this.ctx, this.dbtx, nil, sqlstr, &r, paras...)
