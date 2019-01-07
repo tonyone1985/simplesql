@@ -276,10 +276,11 @@ func (this *_sql) _Select(ctx context.Context, tx *sql.Tx, db *sql.DB, table str
 	}
 
 	stmt, paras, err := ctl.SqlSelectStmt(ctx, tx, db, wherestr, keys...)
-	defer stmt.Close()
+
 	if err != nil {
 		return nil, err
 	}
+	defer stmt.Close()
 
 	rs, err := stmt.QueryContext(ctx, paras...)
 	if err != nil {
@@ -440,7 +441,7 @@ func (this *itemControl) SqlSelectStmt(ctx context.Context, tx *sql.Tx, db *sql.
 	}
 
 	sqlstr := "SELECT " + this.Allfields() +
-		" FROM " + this.tableName + " " + wheresql
+		" FROM " + this.sql.dr.FieldFlag1() + this.tableName + this.sql.dr.FieldFlag2() + " " + wheresql
 	stmt, err := this.prepareStmt(ctx, tx, db, sqlstr)
 	if err != nil {
 		return nil, nil, err
