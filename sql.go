@@ -62,7 +62,8 @@ func (this *_sql) _Execute(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr s
 		}
 		return nil
 	}
-	return errors.New("no result")
+	return nil
+	//return errors.New("no result")
 }
 func (this *_sql) Execute2Table(ctx context.Context, sqlstr string, table string, paras ...interface{}) ([]interface{}, error) {
 	return this._Execute2Table(ctx, nil, this.db, sqlstr, table, paras...)
