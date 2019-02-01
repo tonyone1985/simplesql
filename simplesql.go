@@ -61,8 +61,17 @@ func New(driverName string, connstr string) (Sql, error) {
 		return nil, err
 	}
 
-	s := &_sql{typeNameMap: make(map[string]*itemControl), tableNameMap: make(map[string]*itemControl), db: db}
+	if driverName != "sqlite3" {
+		s := &_sql{Sqlbase: &_sqlbase{typeNameMap: make(map[string]*itemControl), tableNameMap: make(map[string]*itemControl)}, db: db}
 
-	s.driver(driverName)
-	return s, nil
+		s.driver(driverName)
+		return s, nil
+	} else {
+		s2 := &_sqlite{_sqlbase: _sqlbase{typeNameMap: make(map[string]*itemControl), tableNameMap: make(map[string]*itemControl)}}
+		s := &_sql{Sqlbase: s2, db: db}
+		s.driver(driverName)
+		s2.StartWork()
+		return s, nil
+	}
+
 }

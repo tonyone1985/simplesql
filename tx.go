@@ -27,6 +27,7 @@ func (this *_tx) End() {
 	} else {
 		this.dbtx.Commit()
 	}
+	this.sql.TxEnd()
 }
 func (this *_tx) Insert(items ...interface{}) error {
 	this.e = this.sql._Insert(this.ctx, this.dbtx, nil, items...)
