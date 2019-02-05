@@ -104,3 +104,59 @@ func testselect() {
 	}
 	log.Println(r.(*UserBean).Real_name)
 }
+
+var ssql Sql
+
+func sqlitetestsmp() {
+
+	var err error
+	ctx := context.Background()
+	//ctx2 := context.Background()
+
+	//ssql, err = simplesql.New("mysql", "root:123456@tcp(127.0.0.1:3306)/test")
+	ssql, err = simplesql.New("sqlite3", "./foo.db")
+	checkErr(err)
+
+	downtelme := make(chan int)
+	for j := 0; j < 100; j++ {
+		go func() {
+			for i := 0; i < CNT+1; i++ {
+				sqlinserts(ctx)
+				log.Println("insert", i)
+			}
+			//downtelme <- 1
+		}()
+		go func() {
+			for i := 0; i < CNT; i++ {
+				sqldels(ctx)
+				log.Println("del", i)
+			}
+		}()
+	}
+	for i := 0; i < CNT; i++ {
+		sqldels(ctx)
+		log.Println("del", i)
+	}
+
+	<-downtelme
+
+}
+func sqlinserts(ctx context.Context) {
+
+	err := ssql.Execute(ctx, "INSERT INTO userinfo(username, departname, created) values(?,?,?)", nil, "astaxie", "研发部门44444", "2012-12-09")
+
+	checkErr(err)
+
+}
+func sqldels(ctx context.Context) {
+	//stmt, err := db.Prepare("select uid from userinfo LIMIT 1")
+	tx, _ := ssql.Tx(ctx)
+	defer tx.End()
+	uid, err := tx.SelectSingleInt("select uid from userinfo LIMIT 1")
+
+	checkErr(err)
+	_ = uid
+	err = tx.Execute("delete from userinfo where uid=?", nil, uid)
+	checkErr(err)
+
+}
