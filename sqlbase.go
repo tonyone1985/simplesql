@@ -16,6 +16,7 @@ type Sqlbase interface {
 	_Execute2Table(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr string, table string, paras ...interface{}) ([]interface{}, error)
 	_DeleteAll(ctx context.Context, tx *sql.Tx, db *sql.DB, tableName string) error
 	_Insert(ctx context.Context, tx *sql.Tx, db *sql.DB, items ...interface{}) error
+	_InsertSafe(ctx context.Context, tx *sql.Tx, db *sql.DB, items ...interface{}) error
 	_Select(ctx context.Context, tx *sql.Tx, db *sql.DB, table string, wherestr string, keys ...interface{}) ([]interface{}, error)
 	_Update(ctx context.Context, tx *sql.Tx, db *sql.DB, items ...interface{}) error
 	driver(driverName string)
@@ -204,6 +205,36 @@ func (this *_sqlbase) _doInsert(ctx context.Context, ictl *itemControl, tx *sql.
 
 	return err
 }
+func (this *_sqlbase) _doInsertSafe(ctx context.Context, ictl *itemControl, tx *sql.Tx, db *sql.DB, items ...interface{}) error {
+
+	stmtstr := ictl.SQLInsertStmtStr()
+
+	vls := ""
+	firstitem := true
+	for _, v := range items {
+		if firstitem {
+			vls = ictl.GetFieldValuesInsertStr(v)
+			firstitem = false
+		} else {
+			vls += "," + ictl.GetFieldValuesInsertStr(v)
+		}
+
+	}
+
+	sqlstr := stmtstr + " values " + vls
+
+	var err error
+	if db != nil {
+		_, err = db.Exec(sqlstr)
+
+	} else {
+		_, err = tx.Exec(sqlstr)
+	}
+
+	//this.sql.dr.
+
+	return err
+}
 
 type itemGroup struct {
 	ctl   *itemControl
@@ -246,6 +277,23 @@ func (this *_sqlbase) _Insert(ctx context.Context, tx *sql.Tx, db *sql.DB, items
 
 	for _, i := range cais {
 		if er := this._doInsert(ctx, i.ctl, tx, db, i.items...); er != nil {
+			return er
+		}
+	}
+	return nil
+}
+
+func (this *_sqlbase) _InsertSafe(ctx context.Context, tx *sql.Tx, db *sql.DB, items ...interface{}) error {
+	if len(items) == 0 {
+		return errors.New("error arr len")
+	}
+	cais, err := this.getGroups(items...)
+	if err != nil {
+		return err
+	}
+
+	for _, i := range cais {
+		if er := this._doInsertSafe(ctx, i.ctl, tx, db, i.items...); er != nil {
 			return er
 		}
 	}
@@ -460,6 +508,34 @@ func (this *itemControl) SqlUpdateStmt(ctx context.Context, tx *sql.Tx, db *sql.
 	return this.prepareStmt(ctx, tx, db, sqlstr)
 }
 
+func (this *itemControl) SQLInsertStmtStr() string {
+
+	var tagsStr string
+	for i := 0; i < this.keyfieldsLen; i++ {
+		if this.keyfields[i].ftp == FIELD_TYPE_AUTOKEY {
+			continue
+		}
+		if len(tagsStr) > 0 {
+			tagsStr += ", "
+		}
+		tagsStr += this.sql.dr.FieldFlag1()
+		tagsStr += this.keyfields[i].name
+		tagsStr += this.sql.dr.FieldFlag2()
+	}
+	for i := 0; i < this.normalfieldsLen; i++ {
+
+		if len(tagsStr) > 0 {
+			tagsStr += ", "
+		}
+		tagsStr += this.sql.dr.FieldFlag1()
+		tagsStr += this.normalfields[i].name
+		tagsStr += this.sql.dr.FieldFlag2()
+	}
+	sqlstr := "INSERT INTO " + this.sql.dr.FieldFlag1() + this.tableName + this.sql.dr.FieldFlag2() + " ( " + tagsStr + " ) "
+
+	return sqlstr
+}
+
 func (this *itemControl) SQLInsertStmt(ctx context.Context, tx *sql.Tx, db *sql.DB) (*sql.Stmt, error) {
 	var vs string
 	pc := this.sql.dr.ParameterContext()
@@ -506,6 +582,112 @@ func (this *itemControl) SQLInsertStmt(ctx context.Context, tx *sql.Tx, db *sql.
 	return this.prepareStmt(ctx, tx, db, sqlstr)
 }
 
+func GetInterfaceStr(v interface{}) string {
+	vstr := ""
+	switch v.(type) {
+	case *string:
+		vstr = "'" + *v.(*string) + "'"
+		break
+	case string:
+		vstr = "'" + v.(string) + "'"
+		break
+	case *int:
+		vstr = strconv.FormatInt(int64(*v.(*int)), 10)
+		break
+	case int:
+		vstr = strconv.FormatInt(int64(v.(int)), 10)
+		break
+	case int8:
+		vstr = strconv.FormatInt(int64(v.(int8)), 10)
+		break
+	case int16:
+		vstr = strconv.FormatInt(int64(v.(int16)), 10)
+		break
+	case int32:
+		vstr = strconv.FormatInt(int64(v.(int32)), 10)
+		break
+	case int64:
+		vstr = strconv.FormatInt(int64(v.(int64)), 10)
+		break
+	case float32:
+		vstr = strconv.FormatFloat(float64(v.(float32)), 'e', -1, 32)
+		break
+	case float64:
+		vstr = strconv.FormatFloat(v.(float64), 'e', -1, 32)
+		break
+	case *int8:
+		vstr = strconv.FormatInt(int64(*v.(*int8)), 10)
+		break
+	case *int16:
+		vstr = strconv.FormatInt(int64(*v.(*int16)), 10)
+		break
+	case *int32:
+		vstr = strconv.FormatInt(int64(*v.(*int32)), 10)
+		break
+	case *int64:
+		vstr = strconv.FormatInt(int64(*v.(*int64)), 10)
+		break
+	case *float32:
+		vstr = strconv.FormatFloat(float64(*v.(*float32)), 'e', -1, 32)
+		break
+	case *float64:
+		vstr = strconv.FormatFloat(*v.(*float64), 'e', -1, 32)
+		break
+	default:
+		break
+
+	}
+	// ty := reflect.TypeOf(v).String()
+	// _ = ty
+	// switch reflect.TypeOf(v).String() {
+	// case "string":
+	// 	vstr = "'" + v.(string) + "'"
+	// 	break
+	// case "int":
+	// 	vstr = strconv.FormatInt(int64(v.(int)), 10)
+	// 	break
+	// case "int8":
+	// 	vstr = strconv.FormatInt(int64(v.(int8)), 10)
+	// 	break
+	// case "int16":
+	// 	vstr = strconv.FormatInt(int64(v.(int16)), 10)
+	// 	break
+	// case "int32":
+	// 	vstr = strconv.FormatInt(int64(v.(int32)), 10)
+	// 	break
+	// case "int64":
+	// 	vstr = strconv.FormatInt(int64(v.(int64)), 10)
+	// 	break
+	// case "float32":
+	// 	vstr = strconv.FormatFloat(float64(v.(float32)), 'e', -1, 32)
+	// 	break
+	// case "float64":
+	// 	vstr = strconv.FormatFloat(v.(float64), 'e', -1, 32)
+	// 	break
+	// default:
+
+	// 	break
+
+	// }
+
+	return vstr
+}
+
+func (this *itemControl) GetFieldValuesInsertStr(obj interface{}) string {
+	//elem.Field(i).Addr().Interface()
+
+	pars := this.GetFieldValuesInsert(obj)
+	rst := ""
+	for _, v := range pars {
+		if len(rst) == 0 {
+			rst = "(" + GetInterfaceStr(v)
+		} else {
+			rst += "," + GetInterfaceStr(v)
+		}
+	}
+	return rst + ")"
+}
+
 func (this *itemControl) GetFieldValuesInsert(obj interface{}) []interface{} {
 	//elem.Field(i).Addr().Interface()
 	val := reflect.ValueOf(obj)
@@ -518,6 +700,7 @@ func (this *itemControl) GetFieldValuesInsert(obj interface{}) []interface{} {
 		if this.keyfields[i].ftp == FIELD_TYPE_AUTOKEY {
 			continue
 		}
+
 		str := val.String()
 		num := val.NumField()
 

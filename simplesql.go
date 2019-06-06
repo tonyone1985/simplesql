@@ -18,6 +18,8 @@ type Sql interface {
 	Tx(ctx context.Context) (Tx, error)
 	//insert structs to db
 	Insert(ctx context.Context, items ...interface{}) error
+	
+	InsertSafe(ctx context.Context, items ...interface{}) error
 	//update structs
 	Update(ctx context.Context, items ...interface{}) error
 	DeleteAll(ctx context.Context, tableName string) error

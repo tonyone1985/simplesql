@@ -74,6 +74,11 @@ func (this *_sql) Insert(ctx context.Context, items ...interface{}) error {
 	return this._Insert(ctx, nil, this.db, items...)
 }
 
+func (this *_sql) InsertSafe(ctx context.Context, items ...interface{}) error {
+	return this._InsertSafe(ctx, nil, this.db, items...)
+}
+
+
 func (this *_sql) Select(ctx context.Context, table string, keys ...interface{}) ([]interface{}, error) {
 	return this._Select(ctx, nil, this.db, table, "", keys...)
 }
