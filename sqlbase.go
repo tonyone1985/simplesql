@@ -14,6 +14,7 @@ type Sqlbase interface {
 	RegistTable(egptr interface{}, tableName string) error
 	_Execute(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr string, results []interface{}, paras ...interface{}) error
 	_Execute2Table(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr string, table string, paras ...interface{}) ([]interface{}, error)
+	_Execute2Interfaces(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr string, paras ...interface{}) ([]interface{}, error)
 	_DeleteAll(ctx context.Context, tx *sql.Tx, db *sql.DB, tableName string) error
 	_Insert(ctx context.Context, tx *sql.Tx, db *sql.DB, items ...interface{}) error
 	_InsertSafe(ctx context.Context, tx *sql.Tx, db *sql.DB, items ...interface{}) error
@@ -78,6 +79,23 @@ func (this *_sqlbase) _Execute2Table(ctx context.Context, tx *sql.Tx, db *sql.DB
 	defer rs.Close()
 
 	return ctl.scan(rs)
+
+}
+func (this *_sqlbase) _Execute2Interfaces(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr string, paras ...interface{}) ([]interface{}, error) {
+
+	var e error = nil
+	var rs *sql.Rows = nil
+	if tx != nil {
+		rs, e = tx.QueryContext(ctx, sqlstr, paras...)
+	} else if db != nil {
+		rs, e = db.QueryContext(ctx, sqlstr, paras...)
+	}
+	if e != nil {
+		return nil, e
+	}
+	defer rs.Close()
+
+	return scanInterfaces(rs)
 
 }
 
@@ -445,6 +463,30 @@ func (this *itemControl) getFieldSaveAddrs(obj interface{}) []interface{} {
 	}
 	return arr
 }
+
+func scanInterfaces(row *sql.Rows) ([]interface{}, error) {
+	var objs []interface{}
+	for row.Next() {
+		clos, _ := row.Columns()
+		obj := make([]interface{}, len(clos))
+		for i := 0; i < len(clos); i++ {
+			var c interface{}
+			obj[i] = &c
+		}
+		err := row.Scan(obj...)
+		if err != nil {
+			return nil, err
+		}
+
+		for i := 0; i < len(clos); i++ {
+			obj[i] = *obj[i].(*interface{})
+		}
+
+		objs = append(objs, obj)
+	}
+	return objs, nil
+}
+
 func (this *itemControl) scan(row *sql.Rows) ([]interface{}, error) {
 	var objs []interface{}
 	for row.Next() {

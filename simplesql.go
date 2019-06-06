@@ -18,7 +18,7 @@ type Sql interface {
 	Tx(ctx context.Context) (Tx, error)
 	//insert structs to db
 	Insert(ctx context.Context, items ...interface{}) error
-	
+
 	InsertSafe(ctx context.Context, items ...interface{}) error
 	//update structs
 	Update(ctx context.Context, items ...interface{}) error
@@ -36,6 +36,8 @@ type Sql interface {
 	Execute(ctx context.Context, sqlstr string, results []interface{}, paras ...interface{}) error
 	//execute sql string and return rows
 	Execute2Table(ctx context.Context, sqlstr string, table string, paras ...interface{}) ([]interface{}, error)
+
+	Execute2Interfaces(ctx context.Context, sqlstr string, paras ...interface{}) ([]interface{}, error)
 }
 
 type Tx interface {

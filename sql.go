@@ -44,6 +44,9 @@ func (this *_sql) Execute(ctx context.Context, sqlstr string, results []interfac
 func (this *_sql) Execute2Table(ctx context.Context, sqlstr string, table string, paras ...interface{}) ([]interface{}, error) {
 	return this._Execute2Table(ctx, nil, this.db, sqlstr, table, paras...)
 }
+func (this *_sql) Execute2Interfaces(ctx context.Context, sqlstr string, paras ...interface{}) ([]interface{}, error) {
+	return this._Execute2Interfaces(ctx, nil, this.db, sqlstr, paras...)
+}
 
 func (this *_sql) SelectSingleInt(ctx context.Context, sqlstr string, paras ...interface{}) (int, error) {
 	var r int
@@ -77,7 +80,6 @@ func (this *_sql) Insert(ctx context.Context, items ...interface{}) error {
 func (this *_sql) InsertSafe(ctx context.Context, items ...interface{}) error {
 	return this._InsertSafe(ctx, nil, this.db, items...)
 }
-
 
 func (this *_sql) Select(ctx context.Context, table string, keys ...interface{}) ([]interface{}, error) {
 	return this._Select(ctx, nil, this.db, table, "", keys...)
