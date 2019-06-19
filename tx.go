@@ -37,6 +37,10 @@ func (this *_tx) Update(items ...interface{}) error {
 	this.e = this.sql._Update(this.ctx, this.dbtx, nil, items...)
 	return this.e
 }
+func (this *_tx) Delete(tableName string, keys ...interface{}) error {
+	this.e = this.sql._Delete(this.ctx, this.dbtx, nil, tableName, keys...)
+	return this.e
+}
 func (this *_tx) DeleteAll(tableName string) error {
 	this.e = this.sql._DeleteAll(this.ctx, this.dbtx, nil, tableName)
 	return this.e

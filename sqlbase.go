@@ -15,6 +15,7 @@ type Sqlbase interface {
 	_Execute(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr string, results []interface{}, paras ...interface{}) error
 	_Execute2Table(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr string, table string, paras ...interface{}) ([]interface{}, error)
 	_Execute2Interfaces(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr string, paras ...interface{}) ([]interface{}, error)
+	_Delete(ctx context.Context, tx *sql.Tx, db *sql.DB, tableName string, keys ...interface{}) error
 	_DeleteAll(ctx context.Context, tx *sql.Tx, db *sql.DB, tableName string) error
 	_Insert(ctx context.Context, tx *sql.Tx, db *sql.DB, items ...interface{}) error
 	_InsertSafe(ctx context.Context, tx *sql.Tx, db *sql.DB, items ...interface{}) error
@@ -124,6 +125,31 @@ func (this *_sqlbase) _Execute2Interfaces(ctx context.Context, tx *sql.Tx, db *s
 //func (this *_sql) DeleteAll(ctx context.Context, tableName string) error {
 //	return this._DeleteAll(ctx, nil, this.db, tableName)
 //}
+
+func (this *_sqlbase) _Delete(ctx context.Context, tx *sql.Tx, db *sql.DB, tableName string, keys ...interface{}) error {
+	var e error = nil
+	ctl, e := this.getCtlByTableName(tableName)
+	if e != nil {
+		return e
+	}
+	key, e := ctl.GetKeyName()
+	if e != nil {
+		return e
+	}
+	wherestr, e := ctl.GetWhereEqKey(len(keys))
+	if e != nil {
+		return e
+	}
+	sqlstr := "delete from " + this.dr.FieldFlag1() + tableName + this.dr.FieldFlag2() + " where " + this.dr.FieldFlag1() + key + this.dr.FieldFlag2() + wherestr + ";"
+
+	if tx != nil {
+
+		_, e = tx.ExecContext(ctx, sqlstr, keys...)
+	} else if db != nil {
+		_, e = db.ExecContext(ctx, sqlstr, keys...)
+	}
+	return e
+}
 func (this *_sqlbase) _DeleteAll(ctx context.Context, tx *sql.Tx, db *sql.DB, tableName string) error {
 	var e error = nil
 	if tx != nil {
@@ -392,6 +418,34 @@ func (this *itemControl) IsSame(item interface{}) bool {
 		vty = vty.Elem()
 	}
 	return vty.String() == this.vType.String()
+}
+
+func (this *itemControl) GetKeyName() (string, error) {
+	if this.keyfieldsLen <= 0 {
+		return "", errors.New("table " + this.tableName + " have no key")
+	}
+	return this.keyfields[0].name, nil
+
+}
+
+func (this *itemControl) GetWhereEqKey(keylen int) (string, error) {
+
+	if keylen == 1 {
+		return " = ?", nil
+	} else {
+		str := ""
+		for i := 0; i < keylen; i++ {
+			if i == 0 {
+				str = " in (?"
+			} else {
+				str += ",?"
+			}
+
+		}
+		str += ")"
+		return str, nil
+	}
+
 }
 
 func (this *itemControl) prepareStmt(ctx context.Context, tx *sql.Tx, db *sql.DB, sqlstr string) (*sql.Stmt, error) {

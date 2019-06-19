@@ -20,6 +20,8 @@ type Sql interface {
 	Insert(ctx context.Context, items ...interface{}) error
 
 	InsertSafe(ctx context.Context, items ...interface{}) error
+
+	Delete(ctx context.Context, table string, items ...interface{}) error
 	//update structs
 	Update(ctx context.Context, items ...interface{}) error
 	DeleteAll(ctx context.Context, tableName string) error
@@ -43,6 +45,7 @@ type Sql interface {
 type Tx interface {
 	Insert(items ...interface{}) error
 	Update(items ...interface{}) error
+	Delete(table string, items ...interface{}) error
 	DeleteAll(tableName string) error
 	Select(table string, keys ...interface{}) ([]interface{}, error)
 	SelectOne(table string, keys ...interface{}) (interface{}, error)

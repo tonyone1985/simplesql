@@ -70,6 +70,11 @@ func (this *_sql) selectSingle(ctx context.Context, tx *sql.Tx, db *sql.DB, sqls
 	return this._Execute(ctx, tx, db, sqlstr, rst, paras...)
 
 }
+
+func (this *_sql) Delete(ctx context.Context, tableName string, keys ...interface{}) error {
+	return this._Delete(ctx, nil, this.db, tableName, keys...)
+}
+
 func (this *_sql) DeleteAll(ctx context.Context, tableName string) error {
 	return this._DeleteAll(ctx, nil, this.db, tableName)
 }
